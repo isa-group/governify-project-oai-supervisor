@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "A governify implementation of SLA Check from SLA4OAI specification",
   "main": "index.js",
+  "scripts": {
+    "start": "node ."
+  },
   "keywords": [
     "check",
     "sla",
