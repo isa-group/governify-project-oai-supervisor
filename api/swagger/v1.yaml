@@ -61,8 +61,9 @@ paths:
     get:
       tags:
       - "tenants"
-      description: "This endpoint returns the tenant information that is required,\
-        \  you must pass at least one of these parameters."
+      description: >-
+        This endpoint returns the tenant information that is required,
+        you must pass at least one of these parameters.
       operationId: "tenantsGET"
       parameters:
       - name: "apikey"
