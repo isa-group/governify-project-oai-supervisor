@@ -14,8 +14,8 @@ info:
     url: "http://opensource.org/licenses/MIT"
 basePath: "/api/v1"
 schemes:
-- "http"
 - "https"
+- "http"
 consumes:
 - "application/json"
 produces:
