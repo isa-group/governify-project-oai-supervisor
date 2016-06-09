@@ -7,18 +7,15 @@ exports.checkPOST = function(args, res, next) {
     **/
     if(args.requestInfo.value){
         var requestInfo = args.requestInfo.value;
-        res.json( new status(
-                      true,
-                      [
-                          new limit('/pets', 'GET', 'requests', 100, 50, null)
-                      ],
-                      [],
-                      {
-                          filteringType: "none",
-                          xmlFormat: false
-                      },
-                      ["responseTime","animalType","resourceInstances"]
+        if(requestInfo.sla === 'sla01'){
+            res.json( new status( true, [ new limit('/pets', 'GET', 'requests', 100, 50, null) ], [], { filteringType: "none",xmlFormat: false },
+                        [ "responseTime","animalType","resourceInstances" ]
+                  ));
+        }else{
+            res.json( new status( false, [ new limit('/pets', 'GET', 'requests', 100, 100, '2016-01-12T12:57:37.345Z') ], [], { filteringType: "none",xmlFormat: false },
+                      [ "responseTime","animalType","resourceInstances" ]
                 ));
+        }
     }else{
         res.status(400);
         res.json(new error(400, "Bad request, you need to pass requestInfo in the body"));
