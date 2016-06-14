@@ -1,0 +1,19 @@
+---
+production:
+  services:
+    tenants:
+      uri: "http://supervisor.governify.io/api/"
+      apiVersion: v1
+    registry:
+      uri: "http://registry.governify.io/api/"
+      apiVersion: v1
+  port: 80
+development:
+  services:
+    tenants:
+      uri: "http://localhost:3001/api/"
+      apiVersion: v1
+    registry:
+      uri: "http://localhost:3001/api/"
+      apiVersion: v1
+  port: 5000

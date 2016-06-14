@@ -7,8 +7,9 @@ var jsyaml = require('js-yaml');
 var fs = require('fs');
 var bodyParser = require('body-parser');
 var cors = require('cors');
+var config = require('./config');
 
-var serverPort = (process.env.PORT || 5000);
+var serverPort = (process.env.PORT || config.port);
 var app = express();
 
 app.use(bodyParser.json());

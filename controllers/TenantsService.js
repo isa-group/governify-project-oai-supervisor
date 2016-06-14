@@ -1,4 +1,6 @@
 'use strict';
+var request = require('request');
+var config = require('../config');
 
 exports.tenantsGET = function(args, res, next) {
   /**
@@ -8,11 +10,25 @@ exports.tenantsGET = function(args, res, next) {
   **/
     if(args.apikey.value){
         var apikey = args.apikey.value;
-        res.json(resolveTenantByApikey(apikey));
+        resolveTenantByApikey(apikey, (err, body) => {
+            if(!err)
+                res.json(body);
+            else {
+                res.status(500);
+                res.json(new error(500, err.toString()));
+            }
+        });
     }else {
         if(args.account.value){
             var account = args.account.value;
-            res.json(resolveTenantByAccount(account));
+            resolveTenantByAccount(account, (err, body) => {
+                if(!err)
+                    res.json(body);
+                else {
+                    res.status(500);
+                    res.json(new error(500, err.toString()));
+                }
+            });
         }else{
             res.status(400);
             res.json(new error(400, "Bad request, you need to pass apikey or account in a query parameter"));
@@ -21,12 +37,29 @@ exports.tenantsGET = function(args, res, next) {
 
 }
 
-function resolveTenantByAccount(account){
-    return new tenant("petstore_pro",{ tenant: 'tenant1', 'account': account }, { reportType: '/type' });
+function resolveTenantByAccount(account, callback){
+    getTenant("account", account, (err, body) => {
+        callback(err, body);
+    });
 }
 
-function resolveTenantByApikey(apikey){
-    return new tenant("petstore_pro", { tenant: 'tenant1',  account: 'account1@tenant1.com' }, { reportType: '/type' });
+function resolveTenantByApikey(apikey, callback){
+    getTenant("apikey", apikey, (err, body) => {
+        callback(err, body);
+    });
+}
+
+function getTenant(keyName, keyValue, callback){
+    var url = config.services.tenants.uri + config.services.tenants.apiVersion + "/namespaces/oai/tenants";
+    var req = request(url, {
+        qs: {
+            keyName: keyName,
+            keyValue: keyValue
+        },
+        json: true
+    }, (err, response, body) => {
+        callback(err, body);
+    });
 }
 
 function error (code, message){
