@@ -11,9 +11,14 @@ exports.tenantsGET = function(args, res, next) {
     if(args.apikey.value){
         var apikey = args.apikey.value;
         resolveTenantByApikey(apikey, (err, body) => {
-            if(!err)
-                res.json(new tenant(body.agreement, body.scope));
-            else {
+            if(!err){
+                console.log(body);
+                if(body.agreement){
+                    res.json(new tenant(body.agreement, body.scope));
+                }else{
+                    res.json(body);
+                }
+            } else {
                 res.status(500);
                 res.json(new error(500, err.toString()));
             }
@@ -23,7 +28,11 @@ exports.tenantsGET = function(args, res, next) {
             var account = args.account.value;
             resolveTenantByAccount(account, (err, body) => {
                 if(!err)
-                    res.json(new tenant(body.agreement, body.scope));
+                    if(body.agreement){
+                        res.json(new tenant(body.agreement, body.scope));
+                    }else{
+                        res.json(body);
+                    }
                 else {
                     res.status(500);
                     res.json(new error(500, err.toString()));

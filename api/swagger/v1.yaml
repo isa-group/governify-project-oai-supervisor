@@ -98,6 +98,10 @@ paths:
           description: "Bad request"
           schema:
             $ref: "#/definitions/errorModel"
+        404:
+          description: "Not Found"
+          schema:
+            $ref: "#/definitions/errorModel"
         401:
           description: "Unauthorized"
           schema:
