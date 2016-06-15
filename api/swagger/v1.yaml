@@ -105,7 +105,52 @@ paths:
         default:
           description: "Unexpected error"
       x-swagger-router-controller: "Tenants"
+    post:
+      tags:
+      - "tenants"
+      description: >-
+        This endpoint create a new tenant information that is passed by body param.
+      operationId: "tenantsPOST"
+      parameters:
+      - name: "tenant"
+        in: "body"
+        description: "Tenant to be created"
+        required: true
+        schema:
+          $ref: '#/definitions/newTenant'
+      responses:
+        200:
+          description: "Tenant has been created"
+        400:
+          description: "Bad request"
+          schema:
+            $ref: "#/definitions/errorModel"
+        401:
+          description: "Unauthorized"
+          schema:
+            $ref: "#/definitions/errorModel"
+        default:
+          description: "Unexpected error"
+      x-swagger-router-controller: "Tenants"
 definitions:
+  newTenant:
+    type: object
+    required:
+    - "scope"
+    - "sla"
+    properties:
+      sla:
+        type: string
+      scope:
+        type: object
+        required:
+        - "account"
+        - "tenant"
+        properties:
+          account:
+            type: string
+          tenant:
+            type: string
   tenant:
     type: "object"
     required:

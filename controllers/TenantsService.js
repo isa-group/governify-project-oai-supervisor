@@ -12,7 +12,7 @@ exports.tenantsGET = function(args, res, next) {
         var apikey = args.apikey.value;
         resolveTenantByApikey(apikey, (err, body) => {
             if(!err)
-                res.json(body);
+                res.json(new tenant(body.agreement, body.scope));
             else {
                 res.status(500);
                 res.json(new error(500, err.toString()));
@@ -23,7 +23,7 @@ exports.tenantsGET = function(args, res, next) {
             var account = args.account.value;
             resolveTenantByAccount(account, (err, body) => {
                 if(!err)
-                    res.json(body);
+                    res.json(new tenant(body.agreement, body.scope));
                 else {
                     res.status(500);
                     res.json(new error(500, err.toString()));
@@ -33,6 +33,31 @@ exports.tenantsGET = function(args, res, next) {
             res.status(400);
             res.json(new error(400, "Bad request, you need to pass apikey or account in a query parameter"));
         }
+    }
+
+}
+
+exports.tenantsPOST = function(args, res, next) {
+  /**
+   * parameters expected in the args:
+  * tenant (newTenant)
+  **/
+    if(args.tenant.value){
+        var newTenant = args.tenant.value
+        var newTenant = new governifyTenant(newTenant.sla, newTenant.scope);
+
+        var r = request.post({
+          url: config.services.tenants.uri + config.services.tenants.apiVersion + "/namespaces/oai/tenants",
+          body: newTenant,
+          json: true
+        }, (err, response, body) => {
+            if(!err && response.statusCode == 200){
+                res.end();
+            }else{
+                res.status(response.statusCode);
+                res.json(new error(response.statusCode, body));
+            }
+        });
     }
 
 }
@@ -67,8 +92,13 @@ function error (code, message){
     this.message = message;
 }
 
-function tenant(sla, scope, requestedPayload){
-    this.sla = sla,
+function governifyTenant(sla, scope){
+    this.agreement = sla,
     this.scope = scope;
-    this.requestedPayload = requestedPayload;
+}
+
+function tenant (sla, scope){
+  this.sla = sla,
+  this.scope = scope;
+  this.requestedPayload = {};
 }
