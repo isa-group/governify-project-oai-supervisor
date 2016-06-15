@@ -16,6 +16,7 @@ exports.tenantsGET = function(args, res, next) {
                 if(body.agreement){
                     res.json(new tenant(body.agreement, body.scope));
                 }else{
+                    res.status(body.code);
                     res.json(body);
                 }
             } else {
@@ -31,6 +32,7 @@ exports.tenantsGET = function(args, res, next) {
                     if(body.agreement){
                         res.json(new tenant(body.agreement, body.scope));
                     }else{
+                        res.status(body.code);
                         res.json(body);
                     }
                 else {
