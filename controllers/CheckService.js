@@ -20,9 +20,7 @@ exports.checkPOST = function(args, res, next) {
             if(!error && response.statusCode == 404){
                 res.json( new status( false, [], [], {}, [], 'You do not have sla'));
             }else{
-                res.json( new status( false, [ new limit('/pets', 'GET', 'requests', 100, 100, '2016-01-12T12:57:37.345Z') ], [], { filteringType: "none",xmlFormat: false },
-                      [ "responseTime","animalType","resourceInstances" ], error.toString()
-                ));
+                res.json( new status( false, [], [], {}, [], error.toString()));
             }
 
         });
