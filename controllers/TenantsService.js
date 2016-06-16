@@ -12,7 +12,6 @@ exports.tenantsGET = function(args, res, next) {
         var apikey = args.apikey.value;
         resolveTenantByApikey(apikey, (err, body) => {
             if(!err){
-                console.log(body);
                 if(body.agreement){
                     res.json(new tenant(body.agreement, body.scope));
                 }else{

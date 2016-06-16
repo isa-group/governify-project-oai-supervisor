@@ -1,0 +1,334 @@
+{
+  "id": "pro_petstore_YMkddfs",
+  "version": "1.0",
+  "type": "agreement",
+  "context": {
+    "provider": "ISAGroup",
+    "consumer": "tenant1",
+    "validity": {
+      "init": "2015-05-16T09:00:54Z",
+      "end": "2016-05-16T09:00:54Z"
+    },
+    "infrastructure": {
+      "supervisor": "http://supervisor.sla4oai.governify.io/v1/",
+      "monitor": "http://monitor.sla4oai.governify.io/v1/"
+    },
+    "definitions": {
+      "schemas": {
+        "animalTypes": {
+          "type": "int64",
+          "description": "Number of different animal types."
+        },
+        "$ref": "./metrics.yml"
+      },
+      "scopes": {
+        "api": {
+          "resource": {
+            "description": "Defines the path in which limits will be checked",
+            "type": "string"
+          },
+          "operation": {
+            "description": "Defines the operations in which limits will be checked",
+            "type": "string"
+          }
+        },
+        "oai": {
+          "level": {
+            "description": "Defines the level inside the organization in which limits will be checked",
+            "type": "string"
+          }
+        },
+        "offering": {
+          "plan": {
+            "description": "Defines diferent levels of service that are provided",
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "terms": {
+    "pricing": {
+      "scope": [
+        {
+          "$ref": "#/context/definitions/scopes/offering/plan"
+        }
+      ],
+      "of": {
+        "pro": {
+          "cost": 0,
+          "currency": "EUR",
+          "billing": {
+            "period": "monthly",
+            "init": "2015-05-16T09:00:54Z"
+          }
+        }
+      }
+    },
+    "configurations": {
+      "availability": {
+        "scope": [
+          {
+            "$ref": "#/context/definitions/scopes/offering/plan"
+          }
+        ],
+        "values": {
+          "pro": {
+            "of": "R/00:00:00Z/23:59:59Z"
+          }
+        }
+      },
+      "filteringType": {
+        "scope": [
+          {
+            "$ref": "#/context/definitions/scopes/offering/plan"
+          }
+        ],
+        "values": {
+          "pro": {
+            "of": "multipleTags"
+          }
+        }
+      },
+      "xmlFormat": {
+        "scope": [
+          {
+            "$ref": "#/context/definitions/scopes/offering/plan"
+          }
+        ],
+        "values": {
+          "pro": {
+            "of": true
+          }
+        }
+      }
+    },
+    "metrics": {
+      "requests": {
+        "schema": {
+          "$ref": "#/context/definitions/schemas/requests"
+        },
+        "scope": [
+          {
+            "$ref": "#/context/definitions/scopes/api/resource"
+          },
+          {
+            "$ref": "#/context/definitions/scopes/api/operation"
+          },
+          {
+            "$ref": "#/context/definitions/scopes/oai/level"
+          }
+        ]
+      },
+      "resourceInstances": {
+        "schema": {
+          "$ref": "#/context/definitions/schemas/resourceInstances"
+        },
+        "scope": [
+          {
+            "$ref": "#/context/definitions/scopes/api/resource"
+          },
+          {
+            "$ref": "#/context/definitions/scopes/api/operation"
+          },
+          {
+            "$ref": "#/context/definitions/scopes/oai/level"
+          }
+        ]
+      },
+      "animalTypes": {
+        "schema": {
+          "$ref": "#/context/definitions/schemas/animalTypes"
+        },
+        "scope": [
+          {
+            "$ref": "#/context/definitions/scopes/api/resource"
+          },
+          {
+            "$ref": "#/context/definitions/scopes/api/operation"
+          },
+          {
+            "$ref": "#/context/definitions/scopes/oai/level"
+          }
+        ]
+      },
+      "avgResponseTimeMs": {
+        "schema": {
+          "$ref": "#/context/definitions/schemas/avgResponseTimeMs"
+        },
+        "scope": [
+          {
+            "$ref": "#/context/definitions/scopes/api/resource"
+          },
+          {
+            "$ref": "#/context/definitions/scopes/api/operation"
+          },
+          {
+            "$ref": "#/context/definitions/scopes/oai/level"
+          }
+        ]
+      }
+    },
+    "quotas": {
+      "quotas_requests": {
+        "scope": [
+          {
+            "$ref": "#/context/definitions/scopes/offering/plan"
+          },
+          {
+            "$ref": "#/context/definitions/scopes/api/resource"
+          },
+          {
+            "$ref": "#/context/definitions/scopes/api/operation"
+          },
+          {
+            "$ref": "#/context/definitions/scopes/oai/level"
+          }
+        ],
+        "over": {
+          "$ref": "#/terms/metrics/requests"
+        },
+        "of": {
+          "*,/pets,get,account": {
+            "limits": [
+              {
+                "max": 20,
+                "period": "secondly"
+              }
+            ]
+          },
+          "*,/pets,get,tenant": {
+            "limits": [
+              {
+                "max": 100,
+                "period": "secondly"
+              }
+            ]
+          },
+          "*,/pets,post,account": {
+            "limits": [
+              {
+                "max": 100,
+                "period": "minutely"
+              }
+            ]
+          }
+        }
+      },
+      "quotas_resourceInstances": {
+        "scope": [
+          {
+            "$ref": "#/context/definitions/scopes/offering/plan"
+          },
+          {
+            "$ref": "#/context/definitions/scopes/api/resource"
+          },
+          {
+            "$ref": "#/context/definitions/scopes/api/operation"
+          },
+          {
+            "$ref": "#/context/definitions/scopes/oai/level"
+          }
+        ],
+        "over": {
+          "$ref": "#/terms/metrics/resourceInstances"
+        },
+        "of": {
+          "*,/pets,post,account": {
+            "limits": [
+              {
+                "max": 500
+              }
+            ]
+          }
+        }
+      },
+      "quotas_animalTypes": {
+        "scope": [
+          {
+            "$ref": "#/context/definitions/scopes/offering/plan"
+          },
+          {
+            "$ref": "#/context/definitions/scopes/api/resource"
+          },
+          {
+            "$ref": "#/context/definitions/scopes/api/operation"
+          },
+          {
+            "$ref": "#/context/definitions/scopes/oai/level"
+          }
+        ],
+        "over": {
+          "$ref": "#/terms/metrics/animalTypes"
+        },
+        "of": {
+          "*,/pets,post,account": {
+            "limits": [
+              {
+                "max": 5
+              }
+            ]
+          }
+        }
+      }
+    },
+    "rates": {
+      "rates_requests": {
+        "scope": [
+          {
+            "$ref": "#/context/definitions/scopes/offering/plan"
+          },
+          {
+            "$ref": "#/context/definitions/scopes/api/resource"
+          },
+          {
+            "$ref": "#/context/definitions/scopes/api/operation"
+          },
+          {
+            "$ref": "#/context/definitions/scopes/oai/level"
+          }
+        ],
+        "over": {
+          "$ref": "#/terms/metrics/requests"
+        },
+        "of": {
+          "*,/pets/{id},get,account": {
+            "limits": [
+              {
+                "max": 20,
+                "period": "secondly"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "guarantees": {
+      "guarantees_avgResponseTimeMs": {
+        "scope": [
+          {
+            "$ref": "#/context/definitions/scopes/offering/plan"
+          },
+          {
+            "$ref": "#/context/definitions/scopes/api/resource"
+          },
+          {
+            "$ref": "#/context/definitions/scopes/api/operation"
+          },
+          {
+            "$ref": "#/context/definitions/scopes/oai/level"
+          }
+        ],
+        "of": {
+          "*,*,*,account": {
+            "objective": "avgResponseTimeMs <= 250",
+            "window": {
+              "type": "dynamic",
+              "period": "daily"
+            }
+          }
+        }
+      }
+    }
+  }
+}

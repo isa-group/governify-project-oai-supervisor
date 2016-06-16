@@ -1,4 +1,6 @@
 'use strict';
+var request = require('request');
+var config = require('../config');
 
 exports.checkPOST = function(args, res, next) {
     /**
@@ -7,15 +9,23 @@ exports.checkPOST = function(args, res, next) {
     **/
     if(args.requestInfo.value){
         var requestInfo = args.requestInfo.value;
-        if(requestInfo.sla === 'sla01'){
+        getStateByAgreement(requestInfo, (body) => {
+
             res.json( new status( true, [ new limit('/pets', 'GET', 'requests', 100, 50, null) ], [], { filteringType: "none",xmlFormat: false },
-                        [ "responseTime","animalType","resourceInstances" ]
-                  ));
-        }else{
-            res.json( new status( false, [ new limit('/pets', 'GET', 'requests', 100, 100, '2016-01-12T12:57:37.345Z') ], [], { filteringType: "none",xmlFormat: false },
                       [ "responseTime","animalType","resourceInstances" ]
+            ));
+
+        }, (error, response, body) => {
+
+            if(!error && response.statusCode == 404){
+                res.json( new status( false, [], [], {}, [], 'You do not have sla'));
+            }else{
+                res.json( new status( false, [ new limit('/pets', 'GET', 'requests', 100, 100, '2016-01-12T12:57:37.345Z') ], [], { filteringType: "none",xmlFormat: false },
+                      [ "responseTime","animalType","resourceInstances" ], error.toString()
                 ));
-        }
+            }
+
+        });
     }else{
         res.status(400);
         res.json(new error(400, "Bad request, you need to pass requestInfo in the body"));
@@ -23,13 +33,32 @@ exports.checkPOST = function(args, res, next) {
 
 }
 
+
+function getStateByAgreement(requestInfo, successCb, errorCb){
+    var uri = config.services.registry.uri + config.services.registry.apiVersion + "/states/agreements/" + requestInfo.sla;
+
+    request.get({url : uri, json: true}, (error, response, body) => {
+        if(!error){
+            if(response.statusCode == 200){
+                successCb(body);
+            }else{
+                errorCb(null, response, body);
+            }
+        }else{
+            errorCb(error, body);
+        }
+    });
+
+}
 function error (code, message){
     this.code = code;
     this.message = message;
 }
 
-function status(accept, quotas, rates, configuration, requestedMetrics ){
+function status(accept, quotas, rates, configuration, requestedMetrics, reason ){
     this.accept = accept;
+    if(reason)
+      this.reason = reason;
     this.quotas = quotas;
     this.rates = rates;
     this.configuration = configuration;

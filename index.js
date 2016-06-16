@@ -21,6 +21,7 @@ var options = {
 	useStubs: process.env.NODE_ENV === 'development' ? true : false // Conditionally turn on stubs (mock mode)
 };
 
+
 // The Swagger document (require it, build it programmatically, fetch it from a URL, ...)
 var spec = fs.readFileSync('./api/swagger/v1.yaml', 'utf8');
 var swaggerDoc = jsyaml.safeLoad(spec);
@@ -42,6 +43,7 @@ swaggerTools.initializeMiddleware(swaggerDoc, function (middleware) {
 		swaggerUi: swaggerDoc.basePath + '/docs'
 	}));
 
+	app.use("/agreements", express.static("agreements"));
 	// Start the server
 	app.listen(serverPort, function () {
 		console.log('Your server is listening on port %d (http://localhost:%d)', serverPort, serverPort);

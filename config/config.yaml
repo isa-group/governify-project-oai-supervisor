@@ -5,7 +5,7 @@ production:
       uri: "http://supervisor.governify.io/api/"
       apiVersion: v1
     registry:
-      uri: "http://registry.governify.io/api/"
+      uri: "http://supervisor.oai.governify.io:5000/agreements/api/"
       apiVersion: v1
   port: 80
 development:
@@ -14,6 +14,6 @@ development:
       uri: "http://localhost:3001/api/"
       apiVersion: v1
     registry:
-      uri: "http://localhost:3001/api/"
+      uri: "http://localhost:5000/agreements/api/"
       apiVersion: v1
   port: 5000
