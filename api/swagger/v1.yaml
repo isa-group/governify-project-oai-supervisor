@@ -158,7 +158,7 @@ definitions:
   tenant:
     type: "object"
     required:
-    - "requestedPayload"
+    - "requestedMetrics"
     - "scope"
     - "sla"
     properties:
@@ -167,9 +167,10 @@ definitions:
       scope:
         type: "object"
         properties: {}
-      requestedPayload:
-        type: "object"
-        properties: {}
+      requestedMetrics:
+        type: array
+        items:
+          type: string
   slaStatus:
     type: "object"
     properties:
@@ -193,7 +194,7 @@ definitions:
   requestInfo:
     type: "object"
     required:
-    - "requestedPayload"
+    - "metrics"
     - "scope"
     - "sla"
     - "ts"
@@ -209,9 +210,8 @@ definitions:
       scope:
         type: "object"
         properties: {}
-      requestedPayload:
+      metrics:
         type: "object"
-        properties: {}
       environment:
         type: "string"
   limit:

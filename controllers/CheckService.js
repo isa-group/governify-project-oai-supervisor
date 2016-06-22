@@ -18,7 +18,7 @@ exports.checkPOST = function(args, res, next) {
         }, (error, response, body) => {
 
             if(!error && response.statusCode == 404){
-                res.json( new status( false, [], [], {}, [], requestInfo.sla + ' does not exists'));
+                res.json( new status( false, [], [], {}, [], requestInfo.sla + ' does not exist'));
             }else{
                 res.json( new status( false, [], [], {}, [], error.toString()));
             }

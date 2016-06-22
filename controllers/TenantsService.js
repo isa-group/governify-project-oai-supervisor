@@ -110,5 +110,5 @@ function governifyTenant(sla, scope){
 function tenant (sla, scope){
   this.sla = sla,
   this.scope = scope;
-  this.requestedPayload = {};
+  this.requestedMetrics = [];
 }
