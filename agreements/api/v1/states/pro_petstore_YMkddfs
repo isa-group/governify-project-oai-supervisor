@@ -1,0 +1,211 @@
+{
+  "agreementId": "pro_petstore_YMkddfs",
+  "time": "2016-06-22T12:50:35Z",
+  "current": true,
+  "fulfilled": true,
+  "scope":{
+      "resource": "*",
+      "operation": "*",
+      "level": "*"
+  },
+  "pricing": {
+    "cost": {
+      "value": 50
+    },
+    "period": {},
+    "penalties": {}
+  },
+  "metrics": [
+    {
+      "metric": "animalTypes",
+      "scope": {
+        "resource": "/pets",
+        "operation": "POST",
+        "level": "account"
+      },
+      "schema": {
+        "type": "integer",
+        "format": "int64",
+        "description": "Number of different animal types.",
+        "resolution": "check"
+      },
+      "value": 2
+    },
+    {
+      "metric": "resourceInstances",
+      "scope": {
+        "resource": "/pets",
+        "operation": "POST",
+        "level": "account"
+      },
+      "schema": {
+        "type": "integer",
+        "format": "int64",
+        "description": "Number of pet resources",
+        "resolution": "consumption"
+      },
+      "value": 134
+    },
+    {
+      "metric": "requests",
+      "scope": {
+        "resource": "/pets",
+        "operation": "GET",
+        "level": "account"
+      },
+      "schema": {
+        "type": "int64",
+        "description": "Number of requests",
+        "resolution": "consumption"
+      },
+      "value": 2
+    },
+    {
+      "metric": "requests",
+      "scope": {
+        "resource": "/pets",
+        "operation": "GET",
+        "level": "tenant"
+      },
+      "schema": {
+        "type": "int64",
+        "description": "Number of requests",
+        "resolution": "consumption"
+      },
+      "value": 14
+    },
+    {
+      "metric": "requests",
+      "scope": {
+        "resource": "/pets",
+        "operation": "POST",
+        "level": "account"
+      },
+      "schema": {
+        "type": "int64",
+        "description": "Number of requests",
+        "resolution": "consumption"
+      },
+      "value": 34
+    },
+    {
+      "metric": "responseTime",
+      "scope": {
+        "resource": "*",
+        "operation": "*",
+        "level": "*"
+      },
+      "schema": {
+        "type": "int64",
+        "description": "Number of requests",
+        "resolution": "consumption"
+      },
+      "value": 34
+    }
+  ],
+  "guarantees": [
+    {
+      "guarantee": "guarantees_avgResponseTimeMs",
+      "scope": {
+        "resource": "*",
+        "operation": "*",
+        "level": "*"
+      },
+      "logs": {
+        "oai": "http://logs.oai.governify.io/api/v1/"
+      },
+      "period": {},
+      "evidences": [],
+      "fulfilled": true,
+      "penalties": {}
+    }
+  ],
+  "quotas": [
+    {
+      "quota": "quotas_requests",
+      "scope": {
+        "resource": "/pets",
+        "operation": "GET",
+        "level": "account"
+      },
+      "logs": {
+        "oai": "http://logs.oai.governify.io/api/v1/"
+      },
+      "period": {},
+      "evidences": {},
+      "fulfilled": true
+    },
+    {
+      "quota": "quotas_requests",
+      "scope": {
+        "resource": "/pets",
+        "operation": "GET",
+        "level": "tenant"
+      },
+      "logs": {
+        "oai": "http://logs.oai.governify.io/api/v1/"
+      },
+      "period": {},
+      "evidences": {},
+      "fulfilled": true
+    },
+    {
+      "quota": "quotas_requests",
+      "scope": {
+        "resource": "/pets",
+        "operation": "POST",
+        "level": "account"
+      },
+      "logs": {
+        "oai": "http://logs.oai.governify.io/api/v1/"
+      },
+      "period": {},
+      "evidences": {},
+      "fulfilled": true
+    },
+    {
+      "quota": "quotas_resourceInstances",
+      "scope": {
+        "resource": "/pets",
+        "operation": "POST",
+        "level": "account"
+      },
+      "logs": {
+        "oai": "http://logs.oai.governify.io/api/v1/"
+      },
+      "period": {},
+      "evidences": {},
+      "fulfilled": true
+    },
+    {
+      "quota": "quotas_animalTypes",
+      "scope": {
+        "resource": "/pets",
+        "operation": "POST",
+        "level": "account"
+      },
+      "logs": {
+        "oai": "http://logs.oai.governify.io/api/v1/"
+      },
+      "period": {},
+      "evidences": {},
+      "fulfilled": true
+    }
+  ],
+  "rates": [
+    {
+      "rate": "rates_requests",
+      "scope": {
+        "resource": "/pets/{id}",
+        "operation": "GET",
+        "level": "account"
+      },
+      "logs": {
+        "oai": "http://logs.oai.governify.io/api/v1/"
+      },
+      "period": {},
+      "evidences": {},
+      "fulfilled": true
+    }
+  ]
+}
