@@ -19,7 +19,9 @@
     "express": "^4.13.4",
     "iso8601": "^1.1.1",
     "js-yaml": "^3.3.0",
+    "moment": "^2.14.1",
     "request": "^2.72.0",
-    "swagger-tools": "0.10.1"
+    "swagger-tools": "0.10.1",
+    "winston": "^2.2.0"
   }
 }

@@ -8,6 +8,7 @@ var fs = require('fs');
 var bodyParser = require('body-parser');
 var cors = require('cors');
 var config = require('./config');
+var logger = config.logger;
 
 var serverPort = (process.env.PORT || config.port);
 var app = express();
@@ -46,7 +47,7 @@ swaggerTools.initializeMiddleware(swaggerDoc, function (middleware) {
 	app.use("/agreements", express.static("agreements"));
 	// Start the server
 	app.listen(serverPort, function () {
-		console.log('Your server is listening on port %d (http://localhost:%d)', serverPort, serverPort);
-		console.log('Swagger-ui is available on http://localhost:%d/docs', serverPort);
+		logger.info('Your server is listening on port %d (http://localhost:%d)', serverPort, serverPort);
+		logger.info('Swagger-ui is available on http://localhost:%d/docs', serverPort);
 	});
 });

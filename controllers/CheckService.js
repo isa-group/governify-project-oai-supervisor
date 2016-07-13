@@ -1,7 +1,8 @@
 'use strict';
 var request = require('request');
 var config = require('../config');
-var iso8601 = require('iso8601');
+var logger = require('../config').logger;
+var moment = require('moment');
 
 exports.checkPOST = function(args, res, next) {
     /**
@@ -10,15 +11,22 @@ exports.checkPOST = function(args, res, next) {
     **/
     if(args.requestInfo.value){
         var requestInfo = args.requestInfo.value;
-
+        logger.checkCtl("New request to check SLA with: ");
+        logger.debug(JSON.stringify(requestInfo, null, 2));
         //First update before check Metrics on registry
 
         getAgreementById(requestInfo, (agreement) => {
             //requestState with specific scope
-            getStateByAgreement(requestInfo, (state) => {
-
-                if(state.fulfilled === true){
-                    console.log("accepted");
+            getStateByAgreement(requestInfo, (states) => {
+                var fulfilled = true;
+                var excededLimits = [];
+                logger.checkCtl("Checking if fulfilled...");
+                for(var state in states){
+                    fulfilled = fulfilled && states[state].value;
+                    if(!states[state].value) excededLimits.push(states[state]);
+                }
+                if(fulfilled){
+                    logger.checkCtl("Request accepted (OK)");
 
                     //create response
                     var slaStatus = new status( true, [], [], {}, [] );
@@ -31,15 +39,20 @@ exports.checkPOST = function(args, res, next) {
 
                     res.json( slaStatus );
                 }else {
-                    console.log("denied");
+                   logger.checkCtl("Request denied (NO FULFILLED)");
 
                     //create response
-                    var slaStatus = new status( false, [], [], {}, [], 'limits execeded' );
+                    var slaStatus = new status( false, [], [], {}, [], 'limits exceded' );
 
                     //addQuotas
-                    slaStatus.addQuotas(agreement.terms.quotas, state);
+                    logger.debug("Limit execeded:"  + JSON.stringify(excededLimits));
+                    slaStatus.addQuotas(agreement.terms.quotas, excededLimits.filter((element)=>{
+                        return element.stateType == "quotas";
+                    }));
                     //addRates
-                    slaStatus.addRates(agreement.terms.rates, state);
+                    slaStatus.addRates(agreement.terms.rates,excededLimits.filter((element)=>{
+                        return element.stateType == "rates";
+                    }));
 
                     res.json(slaStatus);
                 }
@@ -73,32 +86,44 @@ exports.checkPOST = function(args, res, next) {
 
 
 function getStateByAgreement(requestInfo, successCb, errorCb){
-    var uri = config.services.registry.uri + config.services.registry.apiVersion + "/states/" + requestInfo.sla;
+    var uri = config.services.registry.uri + config.services.registry.apiVersion + "/states/" + requestInfo.sla + "/quotas/quotas_requests";
+    logger.checkCtl("Getting State of %s from registry (url = %s)",  requestInfo.sla, uri);
+    var scope = {resource: requestInfo.resource, operation: requestInfo.method};
+    logger.checkCtl("with scope: " +  JSON.stringify(scope));
 
-    request.get({url : uri, json: true}, (error, response, body) => {
+    request.post({url : uri, json: true, body: {scope}}, (error, response, body) => {
         if(!error){
             if(response.statusCode == 200){
+                logger.checkCtl("Response from registry: ");
+                logger.debug(JSON.stringify(body));
                 successCb(body);
             }else{
+                logger.error("Error retriving state: " + JSON.stringify(response));
                 errorCb(null, response, body);
             }
         }else{
+            logger.error("Error retriving state: " + JSON.stringify(error));
             errorCb(error, body);
         }
     });
 }
 
 function getAgreementById(requestInfo, successCb, errorCb){
-    var uri = config.services.registry.uri + config.services.registry.apiVersion + "/agreements/" + requestInfo.sla;
+    var uri = config.services.registry.uri + config.services.registry.apiVersion + "/agreements/" + requestInfo.sla ;
+    logger.checkCtl("Getting SLA from registry (url = %s)", uri);
 
     request.get({url : uri, json: true}, (error, response, body) => {
         if(!error){
             if(response.statusCode == 200){
+                logger.checkCtl("Response from registry: ");
+                logger.debug(JSON.stringify(body));
                 successCb(body);
             }else{
+                logger.error("Error retriving agreement definition: " + JSON.stringify(response));
                 errorCb(null, response, body);
             }
         }else{
+            logger.error("Error retriving agreement definition: " + JSON.stringify(error));
             errorCb(error, body);
         }
     });
@@ -120,7 +145,7 @@ function status(accept, quotas, rates, configuration, requestedMetrics, reason )
     this.addConfigurations = function (configurations){
         for(var config in configurations){
             var configuration = configurations[config];
-            this.configuration[config] = configuration.of['*'];
+            this.configuration[config] = configuration.of[0].value;
         }
     };
     this.addMetrics = function (metrics){
@@ -130,115 +155,18 @@ function status(accept, quotas, rates, configuration, requestedMetrics, reason )
             this.requestedMetrics.push(m);
         }
     };
-    this.addQuotas = function (quotasDefs, state){
-        for (var qS in state.quotas){
-            var qState = state.quotas[qS];
-            if(qState.fulfilled === false){
-                for(var qD in quotasDefs){
-                   var qDef = quotasDefs[qD];
-                   if(qState.quota === qDef.id){
-                       //level passing request scope (now static)
-                       var scope = qState.scope.resource + ',' + qState.scope.operation.toLowerCase() + ',' + qState.scope.level;
-                       //over tiene que modificarse
-                       var metric = null;
-                       for(var m in state.metrics){
-                          var aux = state.metrics[m];
-                          if(aux.metric == Object.keys(qDef.over)[0] && aux.scope.resource == qState.scope.resource
-                              && aux.scope.operation == qState.scope.operation && aux.scope.level == qState.scope.level )
-                            metric = aux;
-                       }
-                       //elavorate with period
-                       var awaitTo = null;
-                       if(qDef.of[scope].limits[0].period){
-                          switch (qDef.of[scope].limits[0].period) {
-                            case 'secondly':
-                              awaitTo = new Date(iso8601.toDate(state.time).getTime() + 1000);
-                              break;
-                            case 'minutely':
-                              awaitTo = new Date(iso8601.toDate(state.time).getTime() + (60 * 1000));
-                              break;
-                            case 'hourly':
-                              awaitTo = new Date(iso8601.toDate(state.time).getTime() + (60 * 60 * 1000));
-                              break;
-                            case 'daily':
-                              awaitTo = new Date(iso8601.toDate(state.time).getTime() + (24 * 60 * 60 * 1000));
-                              break;
-                            case 'monthly':
-                              awaitTo = new Date(iso8601.toDate(state.time).getTime() + (30 * 24 * 60 * 60 * 1000));
-                              break;
-                            case 'yearly':
-                              awaitTo = new Date(iso8601.toDate(state.time).getTime() + (12 * 30 * 24 * 60 * 60 * 1000));
-                              break;
-                            default:
-                              break;
-                          }
-                       }
-                       this.quotas.push(new limit(
-                            qState.scope.resource,
-                            qState.scope.operation,
-                            metric.metric,
-                            qDef.of[scope].limits[0].max, metric.value, awaitTo ? iso8601.fromDate(awaitTo) : null
-                          )
-                      );
-                  }
-                }
-            }
+    this.addQuotas = function (quotasDefs, states){
+        var periodToAdd = {secondly: "seconds", minutely: "minutes", hourly: "hours", daily: "days", weekly: "weeks", monthly: "months", yearly: "years"};
+        var periodToSetNow = {secondly: "second", minutely: "minute", hourly: "hour", daily: "day", weekly: "week", monthly: "month", yearly: "year"};
+        for (var qS in states){
+            var qState = states[qS];
+            var window = qState.window;
+            var metric = Object.keys(qState.metrics)[0];
+            this.quotas.push( new limit(qState.scope.resource, qState.scope.operation, metric, qState.max, qState.metrics[metric], moment.utc().startOf(periodToSetNow[window.period]).add(1, periodToAdd[window.period] )) );
         }
     };
     this.addRates = function (reatesDefs, state){
-        for (var rS in state.rates){
-            var rState = state.rates[rS];
-            if(rState.fulfilled === false){
-                for(var rD in reatesDefs){
-                   var rDef = reatesDefs[rD];
-                   if(rState.rate === rDef.id){
-                       //level passing request scope (now static)
-                       var scope = rState.scope.resource + ',' + rState.scope.operation.toLowerCase() + ',' + rState.scope.level;
-                       //over tiene que modificarse
-                       var metric = null;
-                       for(var m in state.metrics){
-                          var aux = state.metrics[m];
-                          if(aux.metric == Object.keys(rDef.over)[0] && aux.scope.resource == rState.scope.resource
-                              && aux.scope.operation == rState.scope.operation && aux.scope.level == rState.scope.level )
-                            metric = aux;
-                       }
-                       //elavorate with period
-                       var awaitTo = null;
-                       if(rDef.of[scope].limits[0].period){
-                          switch (rDef.of[scope].limits[0].period) {
-                            case 'secondly':
-                              awaitTo = new Date(new Date().getTime() + 1000);
-                              break;
-                            case 'minutely':
-                              awaitTo = new Date(new Date().getTime() + (60 * 1000));
-                              break;
-                            case 'hourly':
-                              awaitTo = new Date(new Date().getTime() + (60 * 60 * 1000));
-                              break;
-                            case 'daily':
-                              awaitTo = new Date(new Date().getTime() + (24 * 60 * 60 * 1000));
-                              break;
-                            case 'monthly':
-                              awaitTo = new Date(new Date().getTime() + (30 * 24 * 60 * 60 * 1000));
-                              break;
-                            case 'yearly':
-                              awaitTo = new Date(new Date().getTime() + (12 * 30 * 24 * 60 * 60 * 1000));
-                              break;
-                            default:
-                              break;
-                          }
-                       }
-                       this.rates.push(new limit(
-                            rState.scope.resource,
-                            rState.scope.operation,
-                            metric.metric,
-                            rDef.of[scope].limits[0].max, metric.value, awaitTo ? iso8601.fromDate(awaitTo) : null
-                          )
-                      );
-                  }
-                }
-            }
-        }
+
     };
 }
 
