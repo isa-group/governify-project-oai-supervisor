@@ -88,7 +88,7 @@ exports.checkPOST = function(args, res, next) {
 function getStateByAgreement(requestInfo, successCb, errorCb){
     var uri = config.services.registry.uri + config.services.registry.apiVersion + "/states/" + requestInfo.sla + "/quotas/quotas_requests";
     logger.checkCtl("Getting State of %s from registry (url = %s)",  requestInfo.sla, uri);
-    var scope = {resource: requestInfo.resource, operation: requestInfo.method};
+    var scope = {resource: requestInfo.resource.split('?')[0], operation: requestInfo.method.toLowerCase()};
     logger.checkCtl("with scope: " +  JSON.stringify(scope));
 
     request.post({url : uri, json: true, body: {scope}}, (error, response, body) => {

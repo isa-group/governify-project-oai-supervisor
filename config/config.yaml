@@ -5,7 +5,7 @@ production:
       uri: "http://supervisor.governify.io/api/"
       apiVersion: v1
     registry:
-      uri: "http://registry/api/"
+      uri: "http://registry:8081/api/"
       apiVersion: v1
   port: 80
   logger: 'info'
