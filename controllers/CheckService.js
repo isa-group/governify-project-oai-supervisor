@@ -3,6 +3,7 @@ var request = require('request');
 var config = require('../config');
 var logger = require('../config').logger;
 var moment = require('moment');
+var Promise = require("bluebird");
 
 exports.checkPOST = function(args, res, next) {
     /**
@@ -17,7 +18,7 @@ exports.checkPOST = function(args, res, next) {
 
         getAgreementById(requestInfo, (agreement) => {
             //requestState with specific scope
-            getStateByAgreement(requestInfo, (states) => {
+            getStateByAgreement(requestInfo, agreement, (states) => {
                 var fulfilled = true;
                 var excededLimits = [];
                 logger.checkCtl("Checking if fulfilled...");
@@ -50,7 +51,7 @@ exports.checkPOST = function(args, res, next) {
                         return element.stateType == "quotas";
                     }));
                     //addRates
-                    slaStatus.addRates(agreement.terms.rates,excededLimits.filter((element)=>{
+                    slaStatus.addRates(agreement.terms.rates, excededLimits.filter((element)=>{
                         return element.stateType == "rates";
                     }));
 
@@ -85,27 +86,53 @@ exports.checkPOST = function(args, res, next) {
 }
 
 
-function getStateByAgreement(requestInfo, successCb, errorCb){
-    var uri = config.services.registry.uri + config.services.registry.apiVersion + "/states/" + requestInfo.sla + "/quotas/quotas_requests";
-    logger.checkCtl("Getting State of %s from registry (url = %s)",  requestInfo.sla, uri);
-    var scope = {resource: requestInfo.resource.split('?')[0], operation: requestInfo.method.toLowerCase()};
-    logger.checkCtl("with scope: " +  JSON.stringify(scope));
+function getStateByAgreement(requestInfo, agreement, successCb, errorCb){
+    var quotasUri = config.services.registry.uri + config.services.registry.apiVersion + "/states/" + requestInfo.sla + "/quotas";
+    var ratesUri = config.services.registry.uri + config.services.registry.apiVersion + "/states/" + requestInfo.sla + "/rates";
+    logger.checkCtl("Getting State of %s from registry (url = %s)",  requestInfo.sla, config.services.registry.uri + config.services.registry.apiVersion + "/states/" + requestInfo.sla + "/...");
+    var scopes = [
+      {uri: quotasUri, scope: {resource: requestInfo.resource.split('?')[0], operation: requestInfo.method.toLowerCase(), level: "account", account: requestInfo.scope.account}},
+      {uri: quotasUri, scope: {resource: requestInfo.resource.split('?')[0], operation: requestInfo.method.toLowerCase(), level: "tenant", account: agreement.context.consumer}},
+      {uri: ratesUri, scope: {resource: requestInfo.resource.split('?')[0], operation: requestInfo.method.toLowerCase(), level: "account", account: requestInfo.scope.account}},
+      {uri: ratesUri, scope: {resource: requestInfo.resource.split('?')[0], operation: requestInfo.method.toLowerCase(), level: "tenant", account: agreement.context.consumer}}
+    ];
 
-    request.post({url : uri, json: true, body: {scope}}, (error, response, body) => {
-        if(!error){
-            if(response.statusCode == 200){
-                logger.checkCtl("Response from registry: ");
-                logger.debug(JSON.stringify(body));
-                successCb(body);
-            }else{
-                logger.error("Error retriving state: " + JSON.stringify(response));
-                errorCb(null, response, body);
-            }
-        }else{
-            logger.error("Error retriving state: " + JSON.stringify(error));
-            errorCb(error, body);
-        }
+    var states = [];
+    Promise.each(scopes, (scope) => {
+
+      return new Promise((resolve, reject) => {
+          logger.checkCtl("with scope: " +  JSON.stringify(scope));
+          request.post({url : scope.uri, json: true, body: {scope: scope.scope}}, (error, response, body) => {
+              if(!error){
+                  if(response.statusCode == 200){
+                      logger.checkCtl("Registry has responded successfuly");
+                      logger.debug(JSON.stringify(body));
+                      return resolve(body);
+                  }else{
+                      logger.error("Error retriving state: " + JSON.stringify(response));
+                      return reject(null, response, body);
+                  }
+              }else{
+                  logger.error("Error retriving state: " + JSON.stringify(error));
+                  return reject(error, body);
+              }
+          });
+      }).then((success)=>{
+          success.forEach((element)=>{
+              states.push(element);
+          });
+      }, (err)=>{
+          errorCb(err);
+      });
+
+    }).then((success) => {
+        logger.checkCtl("All states have been retrived");
+        logger.debug(JSON.stringify(states));
+        successCb(states);
+    }, (err) => {
+        errorCb(err);
     });
+
 }
 
 function getAgreementById(requestInfo, successCb, errorCb){
@@ -135,6 +162,9 @@ function error (code, message){
 }
 
 function status(accept, quotas, rates, configuration, requestedMetrics, reason ){
+    var periodToAdd = {secondly: "seconds", minutely: "minutes", hourly: "hours", daily: "days", weekly: "weeks", monthly: "months", yearly: "years"};
+    var periodToSetNow = {secondly: "second", minutely: "minute", hourly: "hour", daily: "day", weekly: "week", monthly: "month", yearly: "year"};
+
     this.accept = accept;
     if(reason)
       this.reason = reason;
@@ -156,17 +186,22 @@ function status(accept, quotas, rates, configuration, requestedMetrics, reason )
         }
     };
     this.addQuotas = function (quotasDefs, states){
-        var periodToAdd = {secondly: "seconds", minutely: "minutes", hourly: "hours", daily: "days", weekly: "weeks", monthly: "months", yearly: "years"};
-        var periodToSetNow = {secondly: "second", minutely: "minute", hourly: "hour", daily: "day", weekly: "week", monthly: "month", yearly: "year"};
         for (var qS in states){
             var qState = states[qS];
             var window = qState.window;
             var metric = Object.keys(qState.metrics)[0];
-            this.quotas.push( new limit(qState.scope.resource, qState.scope.operation, metric, qState.max, qState.metrics[metric], moment.utc().startOf(periodToSetNow[window.period]).add(1, periodToAdd[window.period] )) );
+            var awaitTo = window ?  moment.utc().startOf(periodToSetNow[window.period]).add(1, periodToAdd[window.period] ) : null;
+            this.quotas.push( new limit(qState.scope.resource, qState.scope.operation, metric, qState.max, qState.metrics[metric], awaitTo) );
         }
     };
-    this.addRates = function (reatesDefs, state){
-
+    this.addRates = function (ratesDefs, states){
+        for (var rS in states){
+            var rState = states[rS];
+            var window = rState.window;
+            var metric = Object.keys(rState.metrics)[0];
+            var awaitTo = window ?  moment.utc().startOf(periodToSetNow[window.period]).add(1, periodToAdd[window.period] ) : null;
+            this.rates.push( new limit(rState.scope.resource, rState.scope.operation, metric, rState.max, rState.metrics[metric], awaitTo) );
+        }
     };
 }
 

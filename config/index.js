@@ -16,6 +16,7 @@ var logConfig = {
         warning: 8,
         checkCtl: 9,
         tenantsCtl: 9,
+        slaCtl: 9,
         info: 10,
         debug: 11
     },
@@ -24,6 +25,7 @@ var logConfig = {
         warning: 'yellow',
         checkCtl: 'green',
         tenantsCtl: 'cyan',
+        slaCtl: 'magenta',
         info: 'white',
         debug: 'grey'
     }
