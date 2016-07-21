@@ -193,39 +193,39 @@ paths:
             $ref: '#/definitions/errorModel'
       x-swagger-router-controller: Slas
   '/slas/{slaId}':
-    # put:
-    #   tags:
-    #     - slas
-    #   description: 'Modifies the sla with ID = {slaId}'
-    #   operationId: slasPUT
-    #   parameters:
-    #     - name: slaId
-    #       in: path
-    #       description: ID of the sla that will be modified
-    #       required: true
-    #       type: string
-    #     - name: sla
-    #       in: body
-    #       description: SLA to be created.
-    #       required: true
-    #       schema:
-    #         $ref: '#/definitions/slaObject'
-    #   responses:
-    #     '200':
-    #       description: SLA has been modified
-    #     '400':
-    #       description: Bad request
-    #       schema:
-    #         $ref: '#/definitions/errorModel'
-    #     '401':
-    #       description: Unauthorized
-    #       schema:
-    #         $ref: '#/definitions/errorModel'
-    #     default:
-    #       description: Unexpected error
-    #       schema:
-    #         $ref: '#/definitions/errorModel'
-    #   x-swagger-router-controller: Slas
+    put:
+      tags:
+        - slas
+      description: 'Modifies the sla with ID = {slaId}'
+      operationId: slasPUT
+      parameters:
+        - name: slaId
+          in: path
+          description: ID of the sla that will be modified
+          required: true
+          type: string
+        - name: sla
+          in: body
+          description: SLA to be created.
+          required: true
+          schema:
+            $ref: '#/definitions/slaObject'
+      responses:
+        '200':
+          description: SLA has been modified
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/errorModel'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errorModel'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/errorModel'
+      x-swagger-router-controller: Slas
     delete:
       tags:
         - slas

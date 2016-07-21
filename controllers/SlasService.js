@@ -71,7 +71,39 @@ exports.slasGET = function(args, res, next) {
 };
 
 exports.slasPUT = function(args, res, next) {
-    res.end();
+    var sla = args.sla.value;
+    var id = args.slaId.value;
+    var translators = manager.translators.sla4oai;
+    logger.slaCtl("New request to create agreement");
+
+    logger.slaCtl("Converting oai model to governify model...");
+    translators.convertObject(sla, (data)=>{
+
+        var slaObject = jsyaml.safeLoad(data);
+        logger.slaCtl("Model has been converted");
+
+        var url = config.services.registry.uri + config.services.registry.apiVersion + "/agreements/" + id ;
+        logger.slaCtl("Updating agreements on registry ( url = %s )", url);
+        request.put({uri: url, json: true, body: slaObject}, (err, response, body) => {
+            if(!err){
+                if( response.statusCode === 201 ||  response.statusCode === 200 ){
+                    logger.slaCtl("Agreement has been updated successfuly.");
+                    //res.status(201).json(new error(201, slaObject));
+                    res.status(200).end();
+                }else{
+                    logger.slaCtl("Error from registry: " +  JSON.stringify(body, null, 2));
+                    res.status(body.code).json(new error(body.code, body.message));
+                }
+            }else{
+                logger.slaCtl("Unexpected Error: " +  JSON.stringify(err, null, 2));
+                res.status(500).json(new error(500, err));
+            }
+        });
+
+    }, (err) => {
+        logger.slaCtl("Unexpected Error: " +  JSON.stringify(err, null, 2));
+        res.status(500).json(new error(500, "There was problem with document validation please check if it is correct"));
+    });
 };
 
 exports.slasDELETE = function(args, res, next) {
