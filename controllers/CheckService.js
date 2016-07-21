@@ -14,59 +14,64 @@ exports.checkPOST = function(args, res, next) {
         var requestInfo = args.requestInfo.value;
         logger.checkCtl("New request to check SLA with: ");
         logger.debug(JSON.stringify(requestInfo, null, 2));
-        //First update before check Metrics on registry
 
         getAgreementById(requestInfo, (agreement) => {
-            //requestState with specific scope
-            getStateByAgreement(requestInfo, agreement, (states) => {
-                var fulfilled = true;
-                var excededLimits = [];
-                logger.checkCtl("Checking if fulfilled...");
-                for(var state in states){
-                    fulfilled = fulfilled && states[state].value;
-                    if(!states[state].value) excededLimits.push(states[state]);
-                }
-                if(fulfilled){
-                    logger.checkCtl("Request accepted (OK)");
+            //Send before check metrics
+            sendPreCheckMetrics(requestInfo, agreement, (success)=>{
+                //requestState with specific scope
+                getStateByAgreement(requestInfo, agreement, (states) => {
+                    var fulfilled = true;
+                    var excededLimits = [];
+                    logger.checkCtl("Checking if fulfilled...");
+                    for(var state in states){
+                        fulfilled = fulfilled && states[state].value;
+                        if(!states[state].value) excededLimits.push(states[state]);
+                    }
+                    if(fulfilled){
+                        logger.checkCtl("Request accepted (OK)");
 
-                    //create response
-                    var slaStatus = new status( true, [], [], {}, [] );
+                        //create response
+                        var slaStatus = new status( true, [], [], {}, [] );
 
-                    //add configuration
-                    slaStatus.addConfigurations(agreement.terms.configurations);
+                        //add configuration
+                        slaStatus.addConfigurations(agreement.terms.configurations);
 
-                    //add requestedMetrics
-                    slaStatus.addMetrics(agreement.terms.metrics);
+                        //add requestedMetrics
+                        slaStatus.addMetrics(agreement.terms.metrics);
 
-                    res.json( slaStatus );
-                }else {
-                   logger.checkCtl("Request denied (NO FULFILLED)");
+                        res.json( slaStatus );
+                    }else {
+                       logger.checkCtl("Request denied (NO FULFILLED)");
 
-                    //create response
-                    var slaStatus = new status( false, [], [], {}, [], 'limits exceded' );
+                        //create response
+                        var slaStatus = new status( false, [], [], {}, [], 'limits exceded' );
 
-                    //addQuotas
-                    logger.debug("Limit execeded:"  + JSON.stringify(excededLimits));
-                    slaStatus.addQuotas(agreement.terms.quotas, excededLimits.filter((element)=>{
-                        return element.stateType == "quotas";
-                    }));
-                    //addRates
-                    slaStatus.addRates(agreement.terms.rates, excededLimits.filter((element)=>{
-                        return element.stateType == "rates";
-                    }));
+                        //addQuotas
+                        logger.debug("Limit execeded:"  + JSON.stringify(excededLimits));
+                        slaStatus.addQuotas(agreement.terms.quotas, excededLimits.filter((element)=>{
+                            return element.stateType == "quotas";
+                        }));
+                        //addRates
+                        slaStatus.addRates(agreement.terms.rates, excededLimits.filter((element)=>{
+                            return element.stateType == "rates";
+                        }));
 
-                    res.json(slaStatus);
-                }
+                        res.json(slaStatus);
+                    }
 
-            }, (error, response, body) => {
+                }, (error, response, body) => {
 
-                if(!error && response.statusCode == 404){
-                    res.json( new status( false, [], [], {}, [], requestInfo.sla + ' does not exist'));
-                }else{
-                    res.json( new status( false, [], [], {}, [], error.toString()));
-                }
+                    if(!error && response.statusCode == 404){
+                        res.json( new status( false, [], [], {}, [], requestInfo.sla + ' does not exist'));
+                    }else{
+                        res.json( new status( false, [], [], {}, [], error.toString()));
+                    }
 
+                });
+            }, (err) => {
+                  res.json( new status( false, [], [], {}, [], err.toString()));
             });
+
 
         }, (error, response, body) => {
 
@@ -156,6 +161,82 @@ function getAgreementById(requestInfo, successCb, errorCb){
     });
 }
 
+function sendPreCheckMetrics(requestInfo, agreement, successCb, errorCb){
+  var queries = [];
+  var scopes = [ {resource: requestInfo.resource.split('?')[0], operation: requestInfo.method.toLowerCase(), level: "account", account: requestInfo.scope.account},
+                 {resource: requestInfo.resource.split('?')[0], operation: requestInfo.method.toLowerCase(), level: "tenant", account: agreement.context.consumer} ];
+
+  logger.checkCtl("Looking for periords in agreement...");
+  for (var m in requestInfo.metrics){
+      var metric = requestInfo.metrics[m];
+      logger.checkCtl("Looking for metric = %s ==> value = %s", m, metric);
+      scopes.forEach((scope) => {
+          logger.checkCtl("Looking for scope = %s, %s, %s, %s", scope.resource, scope.operation, scope.level, scope.account);
+          var periods = getPeriodsByScope(scope, agreement, m);
+          if(!periods)
+              logger.checkCtl("Not found limits for scope: %s", JSON.stringify(scope, null, 2));
+          else{
+              logger.debug(JSON.stringify(periods, null, 2));
+              logger.checkCtl("Creating queries.");
+              for(var p in periods){
+                   var period = periods[p];
+                   var query = {};
+                   query.scope = scope;
+                   if(period.period)
+                      query.window = {type: period.type, period: period.period};
+
+                   if(!metric)
+                      query.value = 0;
+                   else {
+                      query.value = metric;
+                   }
+
+                   queries.push(new Promise((resolve, reject)=>{
+                        var uri = config.services.registry.uri + config.services.registry.apiVersion + "/states/" + agreement.id + "/metrics/" + m;
+                        logger.checkCtl("Sending request ( url = %s )", uri);
+                        if(query.window){
+                            request.post({url: uri + "/increase", json: true, body: query}, (error, response, body) => {
+                                if(!error){
+                                    if(response.statusCode == 200){
+                                        logger.checkCtl("Response from registry: ");
+                                        logger.debug(JSON.stringify(body));
+                                        return resolve(body);
+                                    }else{
+                                        logger.error("Error retriving state: " + JSON.stringify(response));
+                                        return reject(response);
+                                    }
+                                }else{
+                                    logger.error("Error retriving state: " + JSON.stringify(error));
+                                    return reject(error);
+                                }
+                            });
+                        }else{
+                            request.put({url : uri, json: true, body: query}, (error, response, body) => {
+                                if(!error){
+                                    if(response.statusCode == 200){
+                                        logger.checkCtl("Response from registry: ");
+                                        logger.debug(JSON.stringify(body));
+                                        return resolve(body);
+                                    }else{
+                                        logger.error("Error retriving state: " + JSON.stringify(response));
+                                        return reject(response);
+                                    }
+                                }else{
+                                    logger.error("Error retriving state: " + JSON.stringify(error));
+                                    return reject(error);
+                                }
+                            });
+                        }
+                   }));
+              }
+          }
+      });
+  }
+
+  Promise.all(queries).then((success)=>{successCb(success)}, (err) => {errorCb(err)});
+
+}
+
 function error (code, message){
     this.code = code;
     this.message = message;
@@ -213,4 +294,41 @@ function limit(resource, method, metric, limit, used, awaitTo){
     this.used = used;
     if(awaitTo)
       this.awaitTo = awaitTo;
+}
+
+function getPeriodsByScope(scope, agreement, metric){
+    var periords = [];
+    //adding quotas period
+    var quotasPeriods = agreement.terms.quotas.filter((element)=>{
+        return element.over[metric] ? true : false;
+    }).map((element)=>{
+        return element.of;
+    })[0]
+    quotasPeriods = (quotasPeriods ? quotasPeriods : [] ).filter((element)=>{
+        return element.scope.resource === scope.resource && element.scope.operation === scope.operation && element.scope.level === scope.level;
+    }).map((element)=>{
+        return element.limits;
+    })[0];
+    if(quotasPeriods)
+      quotasPeriods.forEach((element)=>{
+        element.type = "static";
+        periords.push(element);
+      });
+    //adding rates period
+    var ratesPeriods = agreement.terms.rates.filter((element)=>{
+        return element.over[metric] ? true : false;
+    }).map((element)=>{
+        return element.of;
+    })[0]
+    ratesPeriods = (ratesPeriods ? ratesPeriods : [] ).filter((element)=>{
+        return element.scope.resource === scope.resource && element.scope.operation === scope.operation && element.scope.level === scope.level;
+    }).map((element)=>{
+        return element.limits;
+    })[0];
+    if(ratesPeriods)
+        ratesPeriods.forEach((element)=>{
+          element.type = "dynamic";
+          periords.push(element);
+        });
+    return periords;
 }
