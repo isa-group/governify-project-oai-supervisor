@@ -14,25 +14,25 @@ exports.tenantsGET = function(args, res, next) {
         var apikey = args.apikey.value;
         logger.tenantsCtl(" ( apikey mode ) with values = %s ", apikey);
         resolveTenantByApikey(apikey, (err, body) => {
+            logger.debug(" ( tenantsGET ) body result: " + JSON.stringify(body, null, 2));
             if(!err){
-                if(body.agreement){
+                if(body.length != 0 && body[0].agreement){
+                    body = body[0];
                     var t =  new tenant(body.agreement, body.scope);
                     t.setUpRequestedMetrics((success)=>{
                         logger.tenantsCtl("Response body = %s ", JSON.stringify(t, null, 2));
                         res.json(t);
                     }, (err)=>{
                         logger.error(JSON.stringify(err, null, 2));
-                        res.status(500);
-                        res.json(new error(500, err.toString()));
+                        res.status(err.code).json(new error(err.code, err.message));
                     });
                 }else{
-                    res.status(body.code);
-                    res.json(body);
-                    logger.error(JSON.stringify(body, null, 2));
+                    res.status(404).json(new error(404, "Not Found tenant with this scope information"));
+                    logger.error("Not Found tenant with this scope information");
                 }
             } else {
                 res.status(500);
-                res.json(new error(500, err.toString()));
+                res.json(new error(500, err));
                 logger.error(JSON.stringify(err, null, 2));
             }
         });
@@ -41,21 +41,21 @@ exports.tenantsGET = function(args, res, next) {
             var account = args.account.value;
             logger.tenantsCtl(" ( account mode ) with values = %s ", account);
             resolveTenantByAccount(account, (err, body) => {
+                logger.debug(" ( tenantsGET ) body result: " + JSON.stringify(body, null, 2));
                 if(!err)
-                    if(body.agreement){
+                    if(body.length != 0 && body[0].agreement){
+                        body = body[0];
                         var t =  new tenant(body.agreement, body.scope);
                         t.setUpRequestedMetrics((success)=>{
                             logger.tenantsCtl("Response body = %s ", JSON.stringify(t, null, 2));
                             res.json(t);
                         }, (err)=>{
-                            res.status(500);
-                            res.json(new error(500, err.toString()));
+                            res.status(err.code).json(new error(err.code, err.message));
                             logger.error(JSON.stringify(err, null, 2));
                         });
                     }else{
-                        res.status(body.code);
-                        res.json(body);
-                        logger.error(JSON.stringify(body, null, 2));
+                        res.status(404).json(new error(404, "Not Found tenant with this scope information"));
+                        logger.error("Not Found tenant with this scope information");
                     }
                 else {
                     res.status(500);
@@ -83,9 +83,9 @@ exports.tenantsPOST = function(args, res, next) {
         var newTenant = new governifyTenant(newTenant.sla, newTenant.scope);
         logger.tenantsCtl("New tenant values = %s", JSON.stringify(newTenant, null, 2));
 
-        logger.tenantsCtl("Sending POST ( url = %s )", config.services.tenants.uri + config.services.tenants.apiVersion + "/namespaces/oai/tenants");
+        logger.tenantsCtl("Sending POST ( url = %s )", config.services.tenants.uri + config.services.tenants.apiVersion + "/tenants");
         var r = request.post({
-          url: config.services.tenants.uri + config.services.tenants.apiVersion + "/namespaces/oai/tenants",
+          url: config.services.tenants.uri + config.services.tenants.apiVersion + "/tenants",
           body: newTenant,
           json: true
         }, (err, response, body) => {
@@ -115,7 +115,7 @@ function resolveTenantByApikey(apikey, callback){
 }
 
 function getTenant(keyName, keyValue, callback){
-    var url = config.services.tenants.uri + config.services.tenants.apiVersion + "/namespaces/oai/tenants";
+    var url = config.services.tenants.uri + config.services.tenants.apiVersion + "/tenants";
     var req = request(url, {
         qs: {
             keyName: keyName,

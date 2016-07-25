@@ -2,7 +2,7 @@
 production:
   services:
     tenants:
-      uri: "http://supervisor.governify.io/api/"
+      uri: "http://tenants/api/"
       apiVersion: v1
     registry:
       uri: "http://registry:8081/api/"
@@ -12,7 +12,7 @@ production:
 development:
   services:
     tenants:
-      uri: "http://localhost:3001/api/"
+      uri: "http://localhost:5031/api/"
       apiVersion: v1
     registry:
       uri: "http://localhost:8081/api/"
