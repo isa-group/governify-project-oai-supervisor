@@ -1,7 +1,7 @@
 'use strict';
 var request = require('request');
-var config = require('../config');
-var logger = require('../config').logger;
+var config = require('../../config');
+var logger = require('../../config').logger;
 var moment = require('moment');
 var Promise = require("bluebird");
 

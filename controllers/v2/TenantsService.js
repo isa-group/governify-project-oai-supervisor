@@ -1,6 +1,6 @@
 'use strict';
 var request = require('request');
-var config = require('../config');
+var config = require('../../config');
 var logger = config.logger;
 
 exports.tenantsGET = function(args, res, next) {
@@ -9,6 +9,8 @@ exports.tenantsGET = function(args, res, next) {
   * apikey (String)
   * account (String)
   **/
+    var service = args.service.value;
+
     logger.tenantsCtl("New request to get tenant info.");
     if(args.apikey.value){
         var apikey = args.apikey.value;
@@ -16,16 +18,27 @@ exports.tenantsGET = function(args, res, next) {
         resolveTenantByApikey(apikey, (err, body) => {
             logger.debug(" ( tenantsGET ) body result: " + JSON.stringify(body, null, 2));
             if(!err){
-                if(body.length != 0 && body[0].agreement){
-                    body = body[0];
-                    var t =  new tenant(body.agreement, body.scope);
-                    t.setUpRequestedMetrics((success)=>{
-                        logger.tenantsCtl("Response body = %s ", JSON.stringify(t, null, 2));
-                        res.json(t);
-                    }, (err)=>{
-                        logger.error(JSON.stringify(err, null, 2));
-                        res.status(err.code).json(new error(err.code, err.message));
-                    });
+                if(body.length != 0){
+                    var e = true;
+                    for(var tn in body){
+                        var t =  new tenant(body[tn].agreement, body[tn].scope);
+                        if(t.scope.service == service){
+                            t.setUpRequestedMetrics((success)=>{
+                                logger.tenantsCtl("Response body = %s ", JSON.stringify(t, null, 2));
+                                return res.json(t);
+                            }, (err)=>{
+                                logger.error(JSON.stringify(err, null, 2));
+                                return res.status(err.code).json(new error(err.code, err.message));
+                            });
+                            e = e && false;
+                        }else{
+                            e = e && true;
+                        }
+                    }
+                    if(e){
+                        logger.error("Not Found tenant with this scope information");
+                        res.status(404).json(new error(404, "Not Found tenant with this scope information"));
+                    }
                 }else{
                     res.status(404).json(new error(404, "Not Found tenant with this scope information"));
                     logger.error("Not Found tenant with this scope information");
@@ -43,16 +56,21 @@ exports.tenantsGET = function(args, res, next) {
             resolveTenantByAccount(account, (err, body) => {
                 logger.debug(" ( tenantsGET ) body result: " + JSON.stringify(body, null, 2));
                 if(!err)
-                    if(body.length != 0 && body[0].agreement){
-                        body = body[0];
-                        var t =  new tenant(body.agreement, body.scope);
-                        t.setUpRequestedMetrics((success)=>{
-                            logger.tenantsCtl("Response body = %s ", JSON.stringify(t, null, 2));
-                            res.json(t);
-                        }, (err)=>{
-                            res.status(err.code).json(new error(err.code, err.message));
-                            logger.error(JSON.stringify(err, null, 2));
-                        });
+                    if(body.length != 0){
+                        for(var tn in body){
+                            var t =  new tenant(body[tn].agreement, body[tn].scope);
+                            if(t.scope.service == service){
+                                t.setUpRequestedMetrics((success)=>{
+                                    logger.tenantsCtl("Response body = %s ", JSON.stringify(t, null, 2));
+                                    return res.json(t);
+                                }, (err)=>{
+                                    logger.error(JSON.stringify(err, null, 2));
+                                    return res.status(err.code).json(new error(err.code, err.message));
+                                });
+                            }
+                        }
+                        logger.error("Not Found tenant with this scope information");
+                        res.status(404).json(new error(404, "Not Found tenant with this scope information"));
                     }else{
                         res.status(404).json(new error(404, "Not Found tenant with this scope information"));
                         logger.error("Not Found tenant with this scope information");

@@ -1,0 +1,449 @@
+swagger: '2.0'
+info:
+  description: >-
+    A governify implementation of SLA Check from SLA4OAI specification <div
+    class="postman-run-button" data-postman-action="collection/import"
+    data-postman-var-1="481e89aefb6384a73e4d"
+    data-postman-param="env%5Bproduction%5D=W3sidHlwZSI6InRleHQiLCJlbmFibGVkIjp0cnVlLCJrZXkiOiJzdXBlcnZpc29yLm9haS5ob3N0IiwidmFsdWUiOiJzdXBlcnZpc29yLm9haS5nb3Zlcm5pZnkuaW8iLCJob3ZlcmVkIjpmYWxzZX0seyJ0eXBlIjoidGV4dCIsImVuYWJsZWQiOnRydWUsImtleSI6Im1vbml0b3Iub2FpLmhvc3QiLCJ2YWx1ZSI6Im1vbml0b3Iub2FpLmdvdmVybmlmeS5pbyIsImhvdmVyZWQiOmZhbHNlfSx7InR5cGUiOiJ0ZXh0IiwiZW5hYmxlZCI6dHJ1ZSwia2V5Ijoic3VwZXJ2aXNvci5ob3N0IiwidmFsdWUiOiJzdXBlcnZpc29yLmdvdmVybmlmeS5pbyIsImhvdmVyZWQiOmZhbHNlfSx7InR5cGUiOiJ0ZXh0IiwiZW5hYmxlZCI6dHJ1ZSwia2V5IjoiZ292ZXJuaWZ5LXJlZ2lzdHJ5Lmhvc3QiLCJ2YWx1ZSI6InJlZ2lzdHJ5LnNhcy5nb3Zlcm5pZnkuaW8iLCJob3ZlcmVkIjpmYWxzZX0seyJ0eXBlIjoidGV4dCIsImVuYWJsZWQiOnRydWUsImtleSI6ImdvdmVybmlmeS1yZXBvcnRlci1zYXMuaG9zdCIsInZhbHVlIjoiZ292ZXJuaWZ5LXByb2plY3Qtc2FzLXJlcG9ydGVyLmhlcm9rdWFwcC5jb20iLCJob3ZlcmVkIjpmYWxzZX1d"></div>
+    <script type="text/javascript">
+      (function (p,o,s,t,m,a,n) {
+        !p[s] && (p[s] = function () { (p[t] || (p[t] = [])).push(arguments); });
+        !o.getElementById(s+t) && o.getElementsByTagName("head")[0].appendChild((
+          (n = o.createElement("script")),
+          (n.id = s+t), (n.async = 1), (n.src = m), n
+        ));
+      }(window, document, "_pm", "PostmanRunObject", "https://run.pstmn.io/button.js"));
+    </script>
+  version: 2.0.0
+  title: Supervisor
+  termsOfService: 'http://supervisor.sla4oai.governify.io/terms/'
+  contact:
+    name: ISA Group
+    url: 'http://governify.io'
+    email: isagroup.us@gmail.com
+  license:
+    name: Apache License 2.0
+    url: 'http://www.apache.org/licenses/'
+basePath: /api/v2
+schemes:
+  - http
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /check:
+    post:
+      tags:
+        - check
+      description: >-
+        The Check endpoint allows to verify the current state of the SLA for a
+        given service and operation in context for a given scope. In the
+        essence, the service will respond true or false to notify the provider
+        if it is acceptable to fulfill the request (positive case), or on the
+        contrary, not acceptable and then, the request should be denied
+        (negative case).
+      operationId: checkPOST
+      parameters:
+        - in: body
+          name: requestInfo
+          description: Scope of the current request.
+          required: true
+          schema:
+            $ref: '#/definitions/requestInfo'
+      responses:
+        '200':
+          description: SLA status
+          schema:
+            $ref: '#/definitions/slaStatus'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/errorModel'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errorModel'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/errorModel'
+      x-swagger-router-controller: Check
+  /tenants:
+    get:
+      tags:
+        - tenants
+      description: >-
+        This endpoint returns the tenant information that is required, you must
+        pass at least one of these parameters.
+      operationId: tenantsGET
+      parameters:
+        - name: service
+          in: query
+          description: Service which is regulated
+          required: false
+          type: string
+        - name: apikey
+          in: query
+          description: Apikey which identifies a tenant
+          required: false
+          type: string
+        - name: account
+          in: query
+          description: Account which identifies a tennat
+          required: false
+          type: string
+      responses:
+        '200':
+          description: Scope information that is required
+          schema:
+            $ref: '#/definitions/tenant'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/errorModel'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errorModel'
+        '404':
+          description: Not Found
+          schema:
+            $ref: '#/definitions/errorModel'
+        default:
+          description: Unexpected error
+      x-swagger-router-controller: Tenants
+    post:
+      tags:
+        - tenants
+      description: >-
+        This endpoint create a new tenant information that is passed by body
+        param.
+      operationId: tenantsPOST
+      parameters:
+        - name: tenant
+          in: body
+          description: Tenant to be created
+          required: true
+          schema:
+            $ref: '#/definitions/newTenant'
+      responses:
+        '200':
+          description: Tenant has been created
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/errorModel'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errorModel'
+        default:
+          description: Unexpected error
+      x-swagger-router-controller: Tenants
+  /slas:
+    post:
+      tags:
+        - slas
+      description: Creates a new sla passed in body parameter.
+      operationId: slasPOST
+      parameters:
+        - name: sla
+          in: body
+          description: Sla to be created.
+          required: true
+          schema:
+            $ref: '#/definitions/slaObject'
+      responses:
+        '201':
+          description: SLA has been created
+          schema:
+            $ref: '#/definitions/errorModel'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/errorModel'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errorModel'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/errorModel'
+      x-swagger-router-controller: Slas
+    get:
+      tags:
+        - slas
+      description: Retives all sla ids.
+      operationId: slasGET
+      responses:
+        '200':
+          description: SLA has been created
+          schema:
+            type: array
+            items:
+              type: string
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/errorModel'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errorModel'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/errorModel'
+      x-swagger-router-controller: Slas
+  '/slas/{slaId}':
+    put:
+      tags:
+        - slas
+      description: 'Modifies the sla with ID = {slaId}'
+      operationId: slasPUT
+      parameters:
+        - name: slaId
+          in: path
+          description: ID of the sla that will be modified
+          required: true
+          type: string
+        - name: sla
+          in: body
+          description: SLA to be created.
+          required: true
+          schema:
+            $ref: '#/definitions/slaObject'
+      responses:
+        '200':
+          description: SLA has been modified
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/errorModel'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errorModel'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/errorModel'
+      x-swagger-router-controller: Slas
+    delete:
+      tags:
+        - slas
+      description: 'Deletes the sla with ID = {slaId}'
+      operationId: slasDELETE
+      parameters:
+        - name: slaId
+          in: path
+          description: ID of the sla that will be deleted
+          required: true
+          type: string
+      responses:
+        '200':
+          description: SLA has been deleted
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/errorModel'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errorModel'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/errorModel'
+      x-swagger-router-controller: Slas
+
+definitions:
+  slaObject:
+    type: object
+    properties:
+      context:
+        $ref: '#/definitions/context'
+      infrastructure:
+        type: object
+        additionalProperties:
+          type: string
+      metrics:
+        type: object
+        additionalProperties:
+            $ref: '#/definitions/metric'
+      pricing:
+        $ref: '#/definitions/pricing'
+      availability:
+        type: string
+      configuration:
+        type: object
+      quotas:
+        type: object
+      rates:
+        type: object
+      guarantees:
+        type: object
+
+  pricing:
+    type: object
+    properties:
+      cost:
+        type: integer
+      currency:
+        type: string
+      billing:
+        type: string
+      plan:
+        type: string
+
+  metric:
+    type: object
+    properties:
+      type:
+        type: string
+      format:
+        type: string
+      description:
+        type: string
+      resolution:
+        type: string
+        enum:
+          - check
+          - consumption
+
+  context:
+    type: object
+    properties:
+      id:
+        type: string
+      sla:
+        type: string
+      type:
+        type: string
+        enum:
+          - instance
+          - plans
+      api:
+        type: string
+      provider:
+        type: string
+      consumer:
+        type: string
+      validity:
+        $ref: '#/definitions/validity'
+
+  validity:
+    type: object
+    properties:
+      effectiveDate:
+        type: string
+      expirationDate:
+        type: string
+
+  newTenant:
+    type: object
+    required:
+      - scope
+      - sla
+    properties:
+      sla:
+        type: string
+      scope:
+        type: object
+        required:
+          - account
+          - tenant
+        properties:
+          account:
+            type: string
+          tenant:
+            type: string
+  tenant:
+    type: object
+    required:
+      - requestedMetrics
+      - scope
+      - sla
+    properties:
+      sla:
+        type: string
+      scope:
+        type: object
+        properties: {}
+      requestedMetrics:
+        type: array
+        items:
+          type: string
+  slaStatus:
+    type: object
+    properties:
+      accept:
+        type: boolean
+      quotas:
+        type: array
+        items:
+          $ref: '#/definitions/limit'
+      rates:
+        type: array
+        items:
+          $ref: '#/definitions/limit'
+      configuration:
+        type: object
+        properties: {}
+      requestedMetrics:
+        type: array
+        items:
+          type: string
+  requestInfo:
+    type: object
+    required:
+      - metrics
+      - scope
+      - sla
+      - ts
+    properties:
+      sla:
+        type: string
+      ts:
+        type: string
+      resource:
+        type: string
+      method:
+        type: string
+      scope:
+        type: object
+        properties: {}
+      metrics:
+        type: object
+      environment:
+        type: string
+  limit:
+    type: object
+    properties:
+      resource:
+        type: string
+      method:
+        type: string
+      metrics:
+        type: string
+      limit:
+        type: integer
+        format: int64
+      used:
+        type: integer
+        format: int64
+      awaitTo:
+        type: string
+  errorModel:
+    type: object
+    required:
+      - code
+      - message
+    properties:
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string

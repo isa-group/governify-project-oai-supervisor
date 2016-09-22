@@ -1,7 +1,7 @@
 'use strict';
 var request = require('request');
-var config = require('../config');
-var logger = require('../config').logger;
+var config = require('../../config');
+var logger = require('../../config').logger;
 var manager = require('governify-agreement-manager');
 var fs = require('fs');
 var jsyaml = require('js-yaml');
