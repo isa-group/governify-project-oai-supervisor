@@ -6,7 +6,7 @@ var swaggerTools = require('swagger-tools');
 var jsyaml = require('js-yaml');
 var fs = require('fs');
 var bodyParser = require('body-parser');
-var cors = require('cors');
+//var cors = require('cors');
 var config = require('./config');
 var logger = config.logger;
 
@@ -14,7 +14,13 @@ var serverPort = (process.env.PORT || config.port);
 var app = express();
 
 app.use(bodyParser.json());
-app.use(cors());
+//app.use(cors());
+
+// Bypassing 405 status put by swagger when no request handler is defined
+app.options("/*", (req, res, next) => {
+	return res.sendStatus(200);
+});
+
 // swaggerRouter configuration
 var optionsV1 = {
 	swaggerUi: '/swagger/v1.json',
@@ -55,26 +61,26 @@ swaggerTools.initializeMiddleware(swaggerDocV1, function (middleware) {
 
 	//app.use("/agreements", express.static("agreements"));
 	swaggerTools.initializeMiddleware(swaggerDocV2, function (middleware) {
-			// Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
-			app.use(middleware.swaggerMetadata());
+		// Interpret Swagger resources and attach metadata to request - must be first in swagger-tools middleware chain
+		app.use(middleware.swaggerMetadata());
 
-			// Validate Swagger requests
-			app.use(middleware.swaggerValidator());
+		// Validate Swagger requests
+		app.use(middleware.swaggerValidator());
 
-			// Route validated requests to appropriate controller
-			app.use(middleware.swaggerRouter(optionsV2));
+		// Route validated requests to appropriate controller
+		app.use(middleware.swaggerRouter(optionsV2));
 
-			// Serve the Swagger documents and Swagger UI
-			app.use(middleware.swaggerUi({
-				apiDocs: swaggerDocV2.basePath + '/api-docs',
-				swaggerUi: swaggerDocV2.basePath + '/docs'
-			}));
-			// Start the server
-			app.listen(serverPort, function () {
-				logger.info('Your V1 server is listening  on port %d (http://localhost:%d/api/v1)', serverPort, serverPort);
-				logger.info('Your V2 server is listening  on port %d (http://localhost:%d/api/v2)', serverPort, serverPort);
-				logger.info('Swagger-ui is available on http://localhost:%d/api/v1/docs', serverPort);
-				logger.info('Swagger-ui is available on http://localhost:%d/api/v2/docs', serverPort);
-			});
+		// Serve the Swagger documents and Swagger UI
+		app.use(middleware.swaggerUi({
+			apiDocs: swaggerDocV2.basePath + '/api-docs',
+			swaggerUi: swaggerDocV2.basePath + '/docs'
+		}));
+		// Start the server
+		app.listen(serverPort, function () {
+			logger.info('Your V1 server is listening  on port %d (http://localhost:%d/api/v1)', serverPort, serverPort);
+			logger.info('Your V2 server is listening  on port %d (http://localhost:%d/api/v2)', serverPort, serverPort);
+			logger.info('Swagger-ui is available on http://localhost:%d/api/v1/docs', serverPort);
+			logger.info('Swagger-ui is available on http://localhost:%d/api/v2/docs', serverPort);
+		});
 	});
 });
