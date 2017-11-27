@@ -2,10 +2,10 @@
 production:
   services:
     tenants:
-      uri: "http://tenants/api/"
+      uri: "http://tenants:80/api/"
       apiVersion: v1
     registry:
-      uri: "http://registry:8081/api/"
+      uri: "http://registry:80/api/"
       apiVersion: v1
   port: 80
   logger: 'info'
