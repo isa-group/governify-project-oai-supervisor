@@ -116,7 +116,7 @@ exports.tenantsPOST = function (args, res, next) {
                 logger.tenantsCtl("New tenant has been created");
                 res.end();
             } else {
-                logger.error("Error: %s, %s", response.status, JSON.stringify(body, null, 2));
+                logger.error("Error: %s, %s", response.statusCode, JSON.stringify(body, null, 2));
                 res.status(response.statusCode);
                 res.json(new error(response.statusCode, body));
             }
