@@ -12,6 +12,11 @@ exports.checkPOST = function (args, res, next) {
     **/
     if (args.requestInfo.value) {
         var requestInfo = args.requestInfo.value;
+
+        logger.checkCtl("Removing query params from %s...", requestInfo.resource);
+        requestInfo.resource = requestInfo.resource.replace(/\?.*$/, "");
+        logger.checkCtl("Removed query params from %s", requestInfo.resource);
+
         logger.checkCtl("New request to check SLA with: ");
         logger.debug(JSON.stringify(requestInfo, null, 2));
 
