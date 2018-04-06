@@ -95,7 +95,7 @@ exports.checkPOST = function (args, res, next) {
 
 }
 
-
+F
 function getStateByAgreement(requestInfo, agreement, successCb, errorCb) {
     var quotasUri = config.services.registry.uri + config.services.registry.apiVersion + "/states/" + requestInfo.sla + "/quotas";
     var ratesUri = config.services.registry.uri + config.services.registry.apiVersion + "/states/" + requestInfo.sla + "/rates";
