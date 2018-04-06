@@ -28,7 +28,11 @@ exports.tenantsGET = function (args, res, next) {
                                 return res.json(t);
                             }, (err) => {
                                 logger.error(JSON.stringify(err, null, 2));
-                                return res.status(err.code).json(new error(err.code, err.message));
+                                if (err.code) {
+                                    return res.status(err.code).json(new error(err.code, err.message));
+                                } else {
+                                    return res.status(500).json(new error(500, "No response code from the request to get tenant info."));
+                                }
                             });
                             e = e && false;
                         } else {
@@ -65,7 +69,11 @@ exports.tenantsGET = function (args, res, next) {
                                     return res.json(t);
                                 }, (err) => {
                                     logger.error(JSON.stringify(err, null, 2));
-                                    return res.status(err.code).json(new error(err.code, err.message));
+                                    if (err.code) {
+                                        return res.status(err.code).json(new error(err.code, err.message));
+                                    } else {
+                                        return res.status(500).json(new error(500, "No response code from the request to get tenant info."));
+                                    }
                                 });
                                 e = e && false;
                             } else {

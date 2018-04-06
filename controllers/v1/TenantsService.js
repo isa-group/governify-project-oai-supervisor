@@ -24,7 +24,11 @@ exports.tenantsGET = function (args, res, next) {
                         res.json(t);
                     }, (err) => {
                         logger.error(JSON.stringify(err, null, 2));
-                        res.status(err.code).json(new error(err.code, err.message));
+                        if (err.code) {
+                            return res.status(err.code).json(new error(err.code, err.message));
+                        } else {
+                            return res.status(500).json(new error(500, "No response code from the request to get tenant info."));
+                        }
                     });
                 } else {
                     res.status(404).json(new error(404, "Not Found tenant with this scope information"));
@@ -50,7 +54,11 @@ exports.tenantsGET = function (args, res, next) {
                             logger.tenantsCtl("Response body = %s ", JSON.stringify(t, null, 2));
                             res.json(t);
                         }, (err) => {
-                            res.status(err.code).json(new error(err.code, err.message));
+                            if (err.code) {
+                                return res.status(err.code).json(new error(err.code, err.message));
+                            } else {
+                                return res.status(500).json(new error(500, "No response code from the request to get tenant info."));
+                            }
                             logger.error(JSON.stringify(err, null, 2));
                         });
                     } else {
