@@ -123,10 +123,13 @@ exports.tenantsPOST = function (args, res, next) {
             if (!err && response.statusCode == 200) {
                 logger.tenantsCtl("New tenant has been created");
                 res.end();
-            } else {
+            } else if (response) {
                 logger.error("Error: %s, %s", response.statusCode, JSON.stringify(body, null, 2));
                 res.status(response.statusCode);
                 res.json(new error(response.statusCode, body));
+            } else {
+                logger.error("Error: %s", err);
+                res.status(500).json(new error(err, ""));
             }
         });
     }
