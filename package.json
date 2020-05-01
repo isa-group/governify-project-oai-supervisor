@@ -1,29 +1,33 @@
 {
-    "name": "oai-supervisor",
-    "version": "1.0.0",
-    "description": "A governify implementation of SLA Check from SLA4OAI specification",
-    "main": "index.js",
-    "scripts": {
-        "start": "node ."
-    },
-    "keywords": [
-        "check",
-        "sla",
-        "oai"
-    ],
-    "license": "Apache-2.0",
-    "private": true,
-    "dependencies": {
-        "bluebird": "^3.5.1",
-        "body-parser": "^1.18.2",
-        "cors": "^2.8.4",
-        "express": "^4.16.3",
-        "governify-agreement-manager": "0.0.9",
-        "iso8601": "^1.1.1",
-        "js-yaml": "^3.11.0",
-        "moment": "^2.22.0",
-        "request": "^2.85.0",
-        "swagger-tools": "0.10.3",
-        "winston": "^2.4.1"
-    }
+  "name": "oai-supervisor",
+  "version": "1.0.0",
+  "description": "A governify implementation of SLA Check from SLA4OAI specification",
+  "main": "index.js",
+  "scripts": {
+    "start": "node .",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
+  },
+  "keywords": [
+    "check",
+    "sla",
+    "oai"
+  ],
+  "license": "Apache-2.0",
+  "private": true,
+  "dependencies": {
+    "bluebird": "^3.5.1",
+    "body-parser": "^1.18.2",
+    "cors": "^2.8.4",
+    "express": "^4.16.3",
+    "governify-agreement-manager": "0.0.9",
+    "iso8601": "^1.1.1",
+    "js-yaml": "^3.11.0",
+    "moment": "^2.22.0",
+    "request": "^2.85.0",
+    "swagger-tools": "0.10.3",
+    "winston": "^2.4.1",
+    "snyk": "^1.316.1"
+  },
+  "snyk": true
 }
